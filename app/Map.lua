@@ -57,6 +57,15 @@ function Map:get_tile_at(x, y)
   return self.tiles[index]
 end
 
+function Map:is_start(x, y)
+  x, y = math.floor(x), math.floor(y)
+  local start_x, start_y = self.start_x, self.start_y
+  for i = 1, #start_x do
+    if start_x[i] == x and start_y[i] == y then return true end
+  end
+  return false
+end
+
 do
   local function _load_image_data(path)
     local success, result = pcall(love.image.newImageData, path)

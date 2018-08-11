@@ -20,6 +20,10 @@ function title_scene.keypressed(key, scancode, isrepeat)
   end
 end
 
+function title_scene.mousepressed(mx, my, button, isTouch)
+  setScene ("level-select")
+end
+
 function title_scene.draw()
   local dw, dh = love.graphics.getDimensions()
   love.graphics.print("Press [space] to start", dw/2, dh/2, 0,2,2, 50)

@@ -17,6 +17,8 @@ local function pcall2 (where, fn, ...)
 end
 
 function love.load(arg)
+  require "setup_display"
+
   if main.load then
     pcall2("load", main.load, arg)
   end

@@ -1,0 +1,3 @@
+return {
+  SCALE = 4;
+}

@@ -2,21 +2,25 @@ local rgb                     = require "app.util.color.rgb"
 local rgba                    = require "app.util.color.rgba"
 local vec3                    = require "app.util.color.vec3"
 local vec4                    = require "app.util.color.vec4"
-
-local SCALE = 3
+local Global                  = require "app.Global"
+local contains_mouse          = require "app.util.contains_mouse"
 
 local level_select_scene = {}
+
+
+local SLOT_SIZE
 
 local draw_level_tile
 do
   local img = love.graphics.newImage("res/level-select/tiles.png")
   img:setFilter("nearest", "nearest")
+  SLOT_SIZE = math.floor(img:getWidth()/4)
   local quads = {}
-  for y = 1, 2 do
-    local qy = (y-1)*32
-    for x = 1, 8 do
-      local qx = (x-1)*32
-      quads[x + (y-1)*8] = love.graphics.newQuad(qx, qy, 32, 32, img:getDimensions())
+  for y = 1, 4 do
+    local qy = (y-1)*SLOT_SIZE
+    for x = 1, 4 do
+      local qx = (x-1)*SLOT_SIZE
+      quads[x + (y-1)*4] = love.graphics.newQuad(qx, qy, SLOT_SIZE, SLOT_SIZE, img:getDimensions())
     end
   end
   function draw_level_tile(level_id, x, y, r)
@@ -30,8 +34,6 @@ local levels = {}
 
 local _mouse_over = nil
 
-local SLOT_SIZE = 32
-
 for y = 1, 4 do
   local ry = (y-1)*(SLOT_SIZE + 4) + 8
   for x = 1, 4 do
@@ -40,12 +42,11 @@ for y = 1, 4 do
     levels[level_id] = {
       x = rx;
       y = ry;
+      width  = SLOT_SIZE;
+      height = SLOT_SIZE;
       open = level_id < 3;
       id = level_id;
-      contains = function (self, mx, my)
-        local x, y, size = self.x*SCALE, self.y*SCALE, SLOT_SIZE*SCALE
-        return x <= mx and y <= my and mx < x + size and my < y + size
-      end;
+      contains = contains_mouse;
 
       draw = function (self)
         if not self.open then
@@ -84,7 +85,8 @@ function level_select_scene.draw()
   _mouse_over = nil
 
   love.graphics.push()
-  love.graphics.scale(SCALE, SCALE)
+  local scale = Global.SCALE
+  love.graphics.scale(scale, scale)
   for _, level in ipairs(levels) do
     level:draw()
   end
