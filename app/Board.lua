@@ -5,13 +5,33 @@ local Board = {}
 Board.__index = Board
 
 function Board:compile()
-  return {
-    {"LEFT", 1};
-    {"UP", 1};
-    {"RIGHT", 1};
-    {"DOWN", 1};
-    {"JUMP", 1};
-  };
+  local tiles_x = self.tiles_x
+  local tiles_y = self.tiles_y
+  local code   = self.code
+
+  local program = {
+    A = {};
+    B = {};
+    C = {};
+    D = {};
+    E = {};
+    F = {};
+    G = {};
+    H = {};
+  }
+
+  for y = 1, tiles_y do
+    local row_id = ("ABCDEFGH"):sub(y, y)
+    local row = program[row_id]
+    for x = 1, tiles_x do
+      local val = code[x + (y-1)*tiles_x]
+      if type(val) == "table" then
+        table.insert(row, val:compile())
+      end
+    end
+  end
+
+  return Program(program)
 end
 
 local REFER_LEFT    = 1
@@ -25,6 +45,15 @@ function Board:empty_at(x, y)
   if x < 1 or y < 1 or x > tiles_x or y > tiles_y then return false end
   local val = self.code[x + (y-1)*tiles_x]
   return (val == nil)
+end
+
+function Board:opcode_at(x, y)
+  local tiles_x = self.tiles_x
+  local tiles_y = self.tiles_y
+  
+  if x < 1 or y < 1 or x > tiles_x or y > tiles_y then return false end
+  local val = self.code[x + (y-1)*tiles_x]
+  return type(val) == "table" and val or nil
 end
 
 function Board:place(opcode, tile_x, tile_y)

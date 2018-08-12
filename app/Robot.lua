@@ -1,12 +1,15 @@
 local Direction               = require "app.Direction"
-local Program                 = require "app.Program"
 local action_for              = require "app.robot_actions"
 
 local Robot = {}
 Robot.__index = Robot
 
-function Robot:execute(commands)
-  self.program = Program(commands)
+function Robot:execute(program)
+  self.program = program
+end
+
+function Robot:is_idle()
+  return not self.program
 end
 
 function Robot:set_action(command, ...)
@@ -25,6 +28,7 @@ function Robot:update(map, dt)
   local command, a, b, c, d = program(self.state)
   if not command then
     self.program = nil
+    return true
   else
     self:set_action(command, a, b, c, d)
   end
@@ -36,9 +40,9 @@ return setmetatable(Robot, {
     assert(type(robot.y)=="number")
     setmetatable(robot, Robot)
     robot.dir = Direction.UP;
-    robot.idle = true
+    robot.anim = 0;
     robot.move_speed = 2
-    robot.vars = {}
+    robot.vars = { A = 0; B = 0; C = 0; D = 0; E = 0; F = 0; G = 0; H = 0; }
     robot.inventory = {}
     return robot
   end

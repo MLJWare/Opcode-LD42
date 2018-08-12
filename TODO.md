@@ -1,30 +1,33 @@
 # Code
-* value inputting for placed Opcodes
-* movement of placed Opcodes
-* deletion of placed Opcodes (moving them into the palette?)
-* compile placed opcodes into a program
+* ~~value inputting for placed Opcodes~~
+* ~~compile placed opcodes into a program~~
 
-* better handling of win-condition
+* ~~resetting the level~~
+* ~~clearing  the level~~
+* QUESTION movement of placed Opcodes
+* QUESTION deletion of placed Opcodes (moving them into the palette?)
+
+* TODO better handling of win-condition
     * gain stars based on performance?
     * unlocking of new levels
 
-* better reason to collect floppy disks...
+* TODO better reason to collect floppy disks...
 
-* actually _design_ then levels
+* TODO actually _design_ the levels
 
-* better **name for the game**
+* TODO better **name for the game**
 
-* better title scene
-* better level select scene
+* TODO better title scene
+* TODO better level select scene
 
-* instructions/tutorial
+* TODO instructions/tutorial
 
-* additional obstacles
+* IDEA additional obstacles
     * buttons, doors, (bombs), ...
 
-* sound effects
-* (basic background music)
+* TODO sound effects
+* NOTE (basic background music) --> https://boscaceoil.net
 
-* better graphics for walls (if time remaining)
+* NOTE better graphics for walls (if time remaining)
 
-* **JUICE**: shaders & effects
+* TODO **JUICE**: shaders & effects

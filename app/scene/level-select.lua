@@ -24,7 +24,7 @@ do
     end
   end
   function draw_level_tile(level_id, x, y, r)
-    local quad = quads[level_id]
+    local quad = quads[1 + level_id]
     if not quad then return end
     love.graphics.draw(img, quad, x, y)
   end
@@ -38,8 +38,8 @@ for y = 1, 4 do
   local ry = (y-1)*(SLOT_SIZE + 4) + 8
   for x = 1, 4 do
     local rx = (x-1)*(SLOT_SIZE + 4) + 8
-    local level_id = x + (y-1)*4
-    levels[level_id] = {
+    local level_id = (x-1) + (y-1)*4
+    levels[1 + level_id] = {
       x = rx;
       y = ry;
       width  = SLOT_SIZE;

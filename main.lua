@@ -1,6 +1,7 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 function math.round(x) return math.floor(x + 0.5) end
+function math.trunc(x) return (x > 0) and math.floor(x) or math.ceil(x) end
 
 local swapper = require "swapper"
 
