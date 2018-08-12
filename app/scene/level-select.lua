@@ -37,6 +37,16 @@ local _mouse_over = nil
 local slots_x = 5
 local slots_y = 3
 
+
+local isFile
+do
+  local info = {}
+  function isFile(path)
+    local info = love.filesystem.getInfo(path, info)
+    return info and info.type == "file"
+  end
+end
+
 for y = 1, slots_y do
   local ry = (y-1)*(SLOT_SIZE + 16) + 13
   for x = 1, slots_x do
@@ -47,7 +57,7 @@ for y = 1, slots_y do
       y = ry;
       width  = SLOT_SIZE;
       height = SLOT_SIZE;
-      open = level_id < 2 or (level_id > 9 and level_id < 0xE);
+      open = isFile(("app/level/%s.png"):format(level_id));
       id = level_id;
       contains = contains_mouse;
 
