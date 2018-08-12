@@ -61,7 +61,8 @@ end
 
 local function make_OPCODE (self)
   return Opcode {
-    id = self.id;
+    id    = self.id;
+    board = board;
   }
 end
 
@@ -92,6 +93,7 @@ local OPCODES = {
   OpcodeTemplate { id = "SUB"     ; x = 2; y = 3; };
   OpcodeTemplate { id = "MUL"     ; x = 0; y = 4; };
   OpcodeTemplate { id = "DIV"     ; x = 2; y = 4; };
+  OpcodeTemplate { id = "SET"     ; x = 0; y = 5; };
 }
 
 function code_editor.on_enter(level)
@@ -120,20 +122,31 @@ function code_editor.mousepressed(mx, my, button, isTouch)
   local code_palette_x = CODE_PALETTE_X*scale
   local code_palette_y = CODE_PALETTE_Y*scale
 
-  if mx < code_palette_x or my < code_palette_y then return end
+  if mx >= code_palette_x and my >= code_palette_y then
+    local mx2 = mx - code_palette_x
+    local my2 = my - code_palette_y
 
-  local mx2 = mx - code_palette_x
-  local my2 = my - code_palette_y
-
-  for _, OPCODE in ipairs(OPCODES) do
-    local dx = mx2 - l2r(OPCODE.x)
-    local dy = my2 - l2r(OPCODE.y)
-    if OPCODE:contains(dx, dy) then
-      _opcode_moving = OPCODE
-      _opcode_moving_dx = dx
-      _opcode_moving_dy = dy
-      return
+    for _, OPCODE in ipairs(OPCODES) do
+      local dx = mx2 - l2r(OPCODE.x)
+      local dy = my2 - l2r(OPCODE.y)
+      if OPCODE:contains(dx, dy) then
+        _opcode_moving = OPCODE
+        _opcode_moving_dx = dx
+        _opcode_moving_dy = dy
+        return
+      end
     end
+  else
+    local field_mx = mx - CODE_FIELD_X*scale
+    local field_my = my - CODE_FIELD_Y*scale
+    local tile_x = 1 + r2t(field_mx)
+    local tile_y = 1 + r2t(field_my)
+    local opcode, opcode_x, opcode_y = board:try_locate(tile_x, tile_y)
+    if not opcode then return end
+
+    local local_mx = math.floor((field_mx - l2r(opcode_x - 1))/scale)
+    local local_my = math.floor((field_my - l2r(opcode_y - 1))/scale)
+    opcode:on_click(local_mx, local_my)
   end
 end
 
@@ -148,10 +161,10 @@ function code_editor.keypressed(key, scancode, isrepeat)
   if key == "escape" then
     setScene("level-select")
     return
-  end
-
-  if robot.idle and key == "return" then
+  elseif robot.idle and key == "return" then
     robot:execute (board:compile())
+  else
+    board:keypressed(key, scancode, isrepeat)
   end
 end
 

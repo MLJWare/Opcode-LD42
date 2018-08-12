@@ -72,6 +72,15 @@ function Board:try_locate(x, y)
   end
 end
 
+function Board:keypressed(key, scancode, isrepeat)
+  local input = self.active_input
+  if not input then return end
+
+  local value = math.random(15)
+  if value > 9 then value = ("ABCDEF"):sub(value-9, value-9) end
+  input.value = value
+end
+
 return setmetatable(Board, {
   __call = function (_, board)
     local tiles_x = board.tiles_x assert(type(tiles_x)=="number")
@@ -79,6 +88,7 @@ return setmetatable(Board, {
     setmetatable(board, Board)
 
     board.code = {}
+    board.active_input = nil
 
     return board
   end
