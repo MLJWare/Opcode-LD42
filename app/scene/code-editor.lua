@@ -20,11 +20,11 @@ local MB_MIDDLE = 3
 local TILE_SIZE      =  16
 local CODE_FIELD_X   =  18
 local CODE_FIELD_Y   =   3
-local CODE_PALETTE_X = 153
-local CODE_PALETTE_Y =   3
+local CODE_PALETTE_X = 185
+local CODE_PALETTE_Y = CODE_FIELD_Y
 
-local BUTTON_AREA_X = 153
-local BUTTON_AREA_Y = 134
+local BUTTON_AREA_X  = CODE_PALETTE_X
+local BUTTON_AREA_Y  = 134
 
 local function r2l(x) return x/(TILE_SIZE*Global.SCALE) end
 local function l2r(x) return math.floor(x*(TILE_SIZE*Global.SCALE)) end
@@ -37,6 +37,8 @@ local map, robot
 local _opcode_moving = nil
 local _opcode_moving_dx = 0
 local _opcode_moving_dy = 0
+local _opcode_moving_prev_x = nil
+local _opcode_moving_prev_y = nil
 local _opcode_moving_can_place = true
 local _opcode_moving_tile_x = 0
 local _opcode_moving_tile_y = 0
@@ -68,12 +70,7 @@ do
     x        = x;
     y        = y;
     on_click = function (self)
-      if robot.x == map.start_x[1] and robot.y == map.start_y[1]
-      and next(board.code) == nil then
-        setScene("level-select")
-      else
-        code_editor.clear()
-      end
+      setScene("level-select")
     end;
   } table.insert(buttons, button) x = x + button.width
 end
@@ -81,7 +78,6 @@ end
 local function draw_image_direct(image_path, x, y, angle, ox, oy, scale)
   scale, ox, oy = scale or 1, ox or 0, oy or 0
   local img = Images.get(image_path)
-  love.graphics.setColor(1,1,1)
   love.graphics.draw(img, x, y, angle or 0, scale, scale, ox, oy)
 end
 
@@ -89,15 +85,10 @@ local function draw_image_tiled(image_path, x, y, angle, scale)
   draw_image_direct(image_path, l2r(x-.5), l2r(y-.5), angle, 8, 8, Global.SCALE)
 end
 
-local function draw_OPCODE (self)
+local function draw_OPCODE (self, x, y)
   local scale = Global.SCALE
 
-  local x, y
-  if _opcode_moving == self then
-    local mx, my = love.mouse.getPosition()
-    x = mx - _opcode_moving_dx
-    y = my - _opcode_moving_dy
-  else
+  if not (x and y) then
     x = l2r(self.x) + CODE_PALETTE_X*scale
     y = l2r(self.y) + CODE_PALETTE_Y*scale
   end
@@ -106,8 +97,10 @@ end
 
 local function make_OPCODE (self)
   return Opcode {
-    id    = self.id;
-    board = board;
+    id      = self.id;
+    tiles_x = self.tiles_x;
+    tiles_y = self.tiles_y;
+    board   = board;
   }
 end
 
@@ -115,6 +108,7 @@ local function OpcodeTemplate(opcode)
   local image = Images.get("code-editor/opcode/"..opcode.id)
 
   local img_w, img_h = image:getDimensions()
+  opcode.is_template = true
   opcode.width    = img_w
   opcode.height   = img_h
   opcode.tiles_x  = r2t(img_w*Global.SCALE)
@@ -126,24 +120,26 @@ local function OpcodeTemplate(opcode)
   return opcode
 end
 
-local yoff = 2
+local yoff = 0
 local opcode_templates = {
-  --OpcodeTemplate { id = "UP"        ; x = 0; y = 0-yoff; };
-  --OpcodeTemplate { id = "RIGHT"     ; x = 2; y = 0-yoff; };
-  --OpcodeTemplate { id = "DOWN"      ; x = 0; y = 1-yoff; };
-  --OpcodeTemplate { id = "LEFT"      ; x = 2; y = 1-yoff; };
-  OpcodeTemplate { id = "MOVE_1"    ; x = 0; y = 2-yoff; };
-  OpcodeTemplate { id = "TURN_LEFT" ; x = 1; y = 2-yoff; };
-  OpcodeTemplate { id = "TURN_RIGHT"; x = 2; y = 2-yoff; };
-  OpcodeTemplate { id = "INSPECT"   ; x = 3; y = 2-yoff; };
-  OpcodeTemplate { id = "MOVE"      ; x = 0; y = 3-yoff; };
-  OpcodeTemplate { id = "SET"       ; x = 2; y = 3-yoff; };
-  OpcodeTemplate { id = "ADD"       ; x = 0; y = 4-yoff; };
-  OpcodeTemplate { id = "SUB"       ; x = 2; y = 4-yoff; };
-  OpcodeTemplate { id = "MUL"       ; x = 0; y = 5-yoff; };
-  OpcodeTemplate { id = "DIV"       ; x = 2; y = 5-yoff; };
-  OpcodeTemplate { id = "JUMP"      ; x = 0; y = 6-yoff; };
-  OpcodeTemplate { id = "JUMP_LEQ"  ; x = 1; y = 6-yoff; };
+  OpcodeTemplate { id = "UP"         ; x = 0; y = 0-yoff; };
+  OpcodeTemplate { id = "RIGHT"      ; x = 2; y = 0-yoff; };
+  OpcodeTemplate { id = "DOWN"       ; x = 0; y = 1-yoff; };
+  OpcodeTemplate { id = "LEFT"       ; x = 2; y = 1-yoff; };
+  OpcodeTemplate { id = "MOVE_1"     ; x = 0; y = 2-yoff; };
+  OpcodeTemplate { id = "TURN_LEFT"  ; x = 1; y = 2-yoff; };
+  OpcodeTemplate { id = "TURN_AROUND"; x = 2; y = 2-yoff; };
+  OpcodeTemplate { id = "TURN_RIGHT" ; x = 3; y = 2-yoff; };
+  OpcodeTemplate { id = "MOVE"       ; x = 0; y = 3-yoff; };
+  OpcodeTemplate { id = "INSPECT"    ; x = 2; y = 3-yoff; };
+  OpcodeTemplate { id = "GOAL"       ; x = 3; y = 3-yoff; };
+  OpcodeTemplate { id = "ADD"        ; x = 0; y = 4-yoff; };
+  OpcodeTemplate { id = "SUB"        ; x = 2; y = 4-yoff; };
+  OpcodeTemplate { id = "MUL"        ; x = 0; y = 5-yoff; };
+  OpcodeTemplate { id = "DIV"        ; x = 2; y = 5-yoff; };
+  OpcodeTemplate { id = "JUMP_LEQ"   ; x = 0; y = 6-yoff; };
+  OpcodeTemplate { id = "SET"        ; x = 2; y = 6-yoff; };
+  OpcodeTemplate { id = "JUMP"       ; x = 0; y = 7-yoff; };
 }
 
 function code_editor.on_enter(level)
@@ -157,10 +153,19 @@ function code_editor.reset()
     x = map.start_x[1];
     y = map.start_y[1];
   }
+  code_editor.codeable = true
 end
 
 function code_editor.compile_and_run()
   code_editor.reset()
+  code_editor.codeable = false
+  board.active_input = nil
+  if _opcode_moving then
+    if not _opcode_moving.is_template then
+      board:place(_opcode_moving, _opcode_moving_prev_x, _opcode_moving_prev_y)
+    end
+    _opcode_moving = nil
+  end
   robot:execute (board:compile())
 end
 
@@ -176,6 +181,10 @@ if GLOB_level then code_editor.on_enter(GLOB_level) end -- DEBUG HACK TODO remov
 
 function code_editor.update(dt)
   robot:update(map, dt)
+
+  if robot:has_won() then
+    love.window.showMessageBox("HURRAY", "Items: \n"..(table.concat(robot.inventory, ",\n")))
+  end
 end
 
 function code_editor.mousepressed(mx, my, button, isTouch)
@@ -192,20 +201,24 @@ function code_editor.mousepressed(mx, my, button, isTouch)
       end
     end
 
-    local mx2 = mx - code_palette_x
-    local my2 = my - code_palette_y
+    if code_editor.codeable then
+      local mx2 = mx - code_palette_x
+      local my2 = my - code_palette_y
 
-    for _, template in ipairs(opcode_templates) do
-      local dx = mx2 - l2r(template.x)
-      local dy = my2 - l2r(template.y)
-      if template:contains(dx, dy) then
-        _opcode_moving = template
-        _opcode_moving_dx = dx
-        _opcode_moving_dy = dy
-        return
+      for _, template in ipairs(opcode_templates) do
+        local dx = mx2 - l2r(template.x)
+        local dy = my2 - l2r(template.y)
+        if template:contains(dx, dy) then
+          _opcode_moving = template
+          _opcode_moving_prev_x = nil
+          _opcode_moving_prev_y = nil
+          _opcode_moving_dx = dx
+          _opcode_moving_dy = dy
+          return
+        end
       end
     end
-  else
+  elseif code_editor.codeable then
     local field_mx = mx - CODE_FIELD_X*scale
     local field_my = my - CODE_FIELD_Y*scale
     local tile_x = 1 + r2t(field_mx)
@@ -218,14 +231,34 @@ function code_editor.mousepressed(mx, my, button, isTouch)
 
     local local_mx = math.floor((field_mx - l2r(opcode_x - 1))/scale)
     local local_my = math.floor((field_my - l2r(opcode_y - 1))/scale)
-    opcode:on_click(local_mx, local_my, button, isTouch)
+    if opcode:on_click(local_mx, local_my, button, isTouch) then
+      local dx = local_mx*scale
+      local dy = local_my*scale
+      _opcode_moving = opcode
+
+      board:remove(opcode_x, opcode_y)
+      _opcode_moving_prev_x = opcode_x
+      _opcode_moving_prev_y = opcode_y
+
+      _opcode_moving_dx = dx
+      _opcode_moving_dy = dy
+    end
   end
 end
 
 function code_editor.mousereleased(mx, my, button, isTouch)
-  local to_place = _opcode_moving; _opcode_moving = nil
-  if not (to_place and _opcode_moving_can_place) then return end
+  if not code_editor.codeable then return end
 
+  local to_place = _opcode_moving; _opcode_moving = nil
+  if not to_place then return end
+  if not _opcode_moving_can_place then
+    if to_place.is_template then return end
+    local delete = mx >= (CODE_PALETTE_X*Global.SCALE)
+    if delete then return end
+
+    _opcode_moving_tile_x = _opcode_moving_prev_x
+    _opcode_moving_tile_y = _opcode_moving_prev_y
+  end
   board:place(to_place, _opcode_moving_tile_x, _opcode_moving_tile_y)
 end
 
@@ -235,7 +268,7 @@ function code_editor.keypressed(key, scancode, isrepeat)
     return
   elseif robot:is_idle() and key == "return" then
     code_editor.compile_and_run()
-  else
+  elseif code_editor.codeable then
     board:keypressed(key, scancode, isrepeat)
   end
 end
@@ -259,6 +292,12 @@ function code_editor.draw()
 end
 
 function code_editor.draw_opcode_templates()
+  if code_editor.codeable then
+    love.graphics.setColor(1,1,1)
+  else
+    love.graphics.setColor(.5,.5,.5,.5)
+  end
+
   for _, template in ipairs(opcode_templates) do
     if template ~= _opcode_moving then
       template:draw()
@@ -276,7 +315,10 @@ end
 function code_editor.try_draw_opcode_moving()
   if not _opcode_moving then return end
   code_editor.draw_opcode_placement_indicator()
-  _opcode_moving:draw()
+  local mx, my = love.mouse.getPosition()
+  local x = mx - _opcode_moving_dx
+  local y = my - _opcode_moving_dy
+  _opcode_moving:draw(x, y)
 end
 
 function code_editor.draw_start_tiles()
@@ -306,7 +348,7 @@ function code_editor.draw_tiles()
       local opcode = board:opcode_at(x, y)
       if opcode then
         love.graphics.setColor(1, 1, 1, idle and 1 or 0.25)
-        opcode:draw(l2r(x-1), l2r(y-1), scale)
+        opcode:draw(l2r(x-1), l2r(y-1))
       end
     end
   end
@@ -318,6 +360,9 @@ function code_editor.try_draw_tile(x, y)
     local render_tile_size = TILE_SIZE*Global.SCALE
     love.graphics.setColor(vec3(0.31, 0.31, 0.31))
     love.graphics.rectangle("fill", l2r(x-1), l2r(y-1), render_tile_size, render_tile_size)
+  elseif tile == "GOAL" then
+    love.graphics.setColor(1,1,1)
+    draw_image_tiled("game/goal", x, y)
   end
 end
 
@@ -325,14 +370,14 @@ function code_editor.try_draw_item(x, y)
   local item = map:get_item_at(x, y) if not item then return end
 
   if item == "FLOPPY" then
+    love.graphics.setColor(1,1,1)
     draw_image_tiled("game/floppy", x, y)
-  elseif item == "GOAL" then
-    draw_image_tiled("game/goal", x, y)
   end
 end
 
 function code_editor.draw_robot()
   local anim = 1 + math.floor(robot.anim*TILE_SIZE)%4
+  love.graphics.setColor(1,1,1)
   draw_image_tiled("game/robot/"..anim, robot.x, robot.y, Direction.angle(robot.dir))
 end
 

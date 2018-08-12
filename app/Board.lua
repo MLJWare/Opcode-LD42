@@ -27,6 +27,8 @@ function Board:compile()
       local val = code[x + (y-1)*tiles_x]
       if type(val) == "table" then
         table.insert(row, val:compile())
+      else
+        table.insert(row, "NOP")
       end
     end
   end
@@ -50,7 +52,7 @@ end
 function Board:opcode_at(x, y)
   local tiles_x = self.tiles_x
   local tiles_y = self.tiles_y
-  
+
   if x < 1 or y < 1 or x > tiles_x or y > tiles_y then return false end
   local val = self.code[x + (y-1)*tiles_x]
   return type(val) == "table" and val or nil
@@ -68,7 +70,7 @@ function Board:place(opcode, tile_x, tile_y)
     for xi = 1, opcode_tiles_x do
       local x = tile_x + xi - 1
       local val
-      if     xi == 1 and yi == 1 then val = opcode:make()
+      if     xi == 1 and yi == 1 then val = not opcode.make and opcode or opcode:make()
       elseif xi  > 1 and yi == 1 then val = REFER_LEFT
       elseif xi == 1 and yi  > 1 then val = REFER_UP
       else                            val = REFER_UP_LEFT
@@ -97,6 +99,24 @@ function Board:try_locate(x, y)
     elseif val == REFER_UP_LEFT then x, y = x - 1, y - 1
     else
       return val, x, y
+    end
+  end
+end
+
+function Board:remove(x, y)
+  local opcode, opcode_x, opcode_y = self:try_locate(x,y)
+  if not opcode then return end
+
+  local opcode_tiles_x = opcode.tiles_x
+  local opcode_tiles_y = opcode.tiles_y
+  local board_code     = self.code
+  local board_tiles_x  = self.tiles_x
+
+  for yi = 1, opcode_tiles_y do
+    local y = opcode_y + yi - 1
+    for xi = 1, opcode_tiles_x do
+      local x = opcode_x + xi - 1
+      board_code[x + (y-1)*board_tiles_x] = nil
     end
   end
 end

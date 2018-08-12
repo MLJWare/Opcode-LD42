@@ -34,17 +34,20 @@ local levels = {}
 
 local _mouse_over = nil
 
-for y = 1, 4 do
-  local ry = (y-1)*(SLOT_SIZE + 4) + 8
-  for x = 1, 4 do
-    local rx = (x-1)*(SLOT_SIZE + 4) + 8
-    local level_id = (x-1) + (y-1)*4
+local slots_x = 5
+local slots_y = 3
+
+for y = 1, slots_y do
+  local ry = (y-1)*(SLOT_SIZE + 16) + 13
+  for x = 1, slots_x do
+    local rx = (x-1)*(SLOT_SIZE + 16) + 14
+    local level_id = (x-1) + (y-1)*slots_x
     levels[1 + level_id] = {
       x = rx;
       y = ry;
       width  = SLOT_SIZE;
       height = SLOT_SIZE;
-      open = level_id < 3;
+      open = level_id < 2 or (level_id > 9 and level_id < 0xE);
       id = level_id;
       contains = contains_mouse;
 

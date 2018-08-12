@@ -1,6 +1,7 @@
 local Direction               = require "app.Direction"
 local Program                 = require "app.Program"
 local Images                  = require "app.Images"
+local Global                  = require "app.Global"
 
 local DISPLAY_MAX = 0x11
 
@@ -17,9 +18,10 @@ do
     quads[i] = love.graphics.newQuad(x, y, w, h, image:getDimensions())
   end
 
-  function display(value, x, y, scale)
+  function display(value, x, y)
     local quad = quads[value]
     if not quad then return end
+    local scale = Global.SCALE
     love.graphics.draw(image, quad, x, y, 0, scale, scale)
   end
 end
@@ -53,14 +55,16 @@ function Opcode:on_click(local_mx, local_my, button, isTouch)
     if button == 2 then input:decrement() else input:increment() end
   end
   self.board.active_input = input
+
+  return not input
 end
 
-function Opcode:draw(x, y, scale)
-  love.graphics.draw(self.image, x, y, 0, scale)
+function Opcode:draw(x, y)
+  love.graphics.draw(self.image, x, y, 0, Global.SCALE)
 
   local active_input = self.board.active_input
   for _, input in ipairs(self.inputs) do
-    input:draw(x, y, scale, active_input)
+    input:draw(x, y, active_input)
   end
 end
 
@@ -87,11 +91,12 @@ do
     if self.value > self.max then self.value = self.min end
   end
 
-  function Input:draw(x, y, scale, active_input)
+  function Input:draw(x, y, active_input)
     if active_input == self and (love.timer.getTime()%.4<.1) then return end
+    local scale = Global.SCALE
     x = x + self.dx*scale
     y = y + self.dy*scale
-    display(self.value, x, y, scale)
+    display(self.value, x, y)
   end
   function Input:increment()
     self.value = self.value + 1
@@ -153,7 +158,7 @@ local function make_Yellow_2x1(self)
   self.image = Images.get("code-editor/opcode/"..self.id)
   self.inputs = {
     Input { id = "var"; min = 0xA; value = 0xA; dx =  5; dy = 5; };
-    Input { id = "value"; value = 0xA; dx = 24; dy = 5; };
+    Input { id = "value"; value = 1; dx = 24; dy = 5; };
   }
   return self
 end
@@ -169,7 +174,7 @@ local function make_Green_2x1(self)
   self.image = Images.get("code-editor/opcode/"..self.id)
   self.inputs = {
     Input { id = "var"; min = 0xA; value = 0xA; dx =  5; dy = 5; };
-    Input { id = "value"; value = 0xA; dx = 24; dy = 5; };
+    Input { id = "value"; value = 1; dx = 24; dy = 5; };
   }
   return self
 end
@@ -184,7 +189,7 @@ local function make_Blue_1x1(self)
   setmetatable(self, Blue_1x1)
   self.image = Images.get("code-editor/opcode/"..self.id)
   self.inputs = {
-    Input { id = "line"; min = 0xA; value = 0xA; dx = 9; dy = 5; };
+    Input { id = "line"; value = 1; dx = 9; dy = 5; };
   }
   return self
 end
@@ -199,38 +204,42 @@ local function make_Blue_2x1(self)
   setmetatable(self, Blue_2x1)
   self.image = Images.get("code-editor/opcode/"..self.id)
   self.inputs = {
-    Input { id = "var" ; min = 0xA; value = 0xA; dx =  4; dy = 5; };
-    Input { id = "line"; min = 0xA; value = 0xA; dx = 25; dy = 5; };
+    Input { id = "var" ; min = 0; value = 0xA; dx =  4; dy = 5; };
+    Input { id = "line"; min = 0; value = 0xA; dx = 25; dy = 5; };
   }
   return self
 end
 
 local make_opcode = {
-  ["UP"      ] = make_Red_2x1;
-  ["DOWN"    ] = make_Red_2x1;
-  ["LEFT"    ] = make_Red_2x1;
-  ["RIGHT"   ] = make_Red_2x1;
-  ["MOVE"    ] = make_Red_2x1;
+  ["UP"         ] = make_Red_2x1;
+  ["DOWN"       ] = make_Red_2x1;
+  ["LEFT"       ] = make_Red_2x1;
+  ["RIGHT"      ] = make_Red_2x1;
+  ["MOVE"       ] = make_Red_2x1;
 
-  ["MOVE_1"    ] = make_Red_1x1;
-  ["TURN_LEFT" ] = make_Red_1x1;
-  ["TURN_RIGHT"] = make_Red_1x1;
-  ["INSPECT"   ] = make_Red_1x1;
+  ["MOVE_1"     ] = make_Red_1x1;
+  ["TURN_LEFT"  ] = make_Red_1x1;
+  ["TURN_RIGHT" ] = make_Red_1x1;
+  ["TURN_AROUND"] = make_Red_1x1;
+  ["INSPECT"    ] = make_Red_1x1;
+  ["GOAL"       ] = make_Red_1x1;
 
-  ["ADD"     ] = make_Yellow_2x1;
-  ["SUB"     ] = make_Yellow_2x1;
-  ["MUL"     ] = make_Yellow_2x1;
-  ["DIV"     ] = make_Yellow_2x1;
+  ["ADD"        ] = make_Yellow_2x1;
+  ["SUB"        ] = make_Yellow_2x1;
+  ["MUL"        ] = make_Yellow_2x1;
+  ["DIV"        ] = make_Yellow_2x1;
 
-  ["JUMP"    ] = make_Blue_1x1;
-  ["JUMP_LEQ"] = make_Blue_2x1;
+  ["JUMP"       ] = make_Blue_1x1;
+  ["JUMP_LEQ"   ] = make_Blue_2x1;
 
-  ["SET"     ] = make_Green_2x1;
+  ["SET"        ] = make_Green_2x1;
 }
 
 return setmetatable(Opcode, {
   __call = function (_, opcode)
     assert(type(opcode.board)=="table", "Missing 'board' property.")
+    assert(type(opcode.tiles_x) == "number", "Missing numeric 'tiles_x' property.")
+    assert(type(opcode.tiles_y) == "number", "Missing numeric 'tiles_y' property.")
     local id    = assert(opcode.id, "Missing 'id' property.")
     local maker = assert(make_opcode[id], "Invalid opcode: "..id)
     maker(opcode)

@@ -54,15 +54,31 @@ actions["TURN_RIGHT"] = function (self)
     self:set_action(nil)
   end
 end
+actions["TURN_AROUND"] = function (self)
+  return function (self)
+    self.dir = Direction.turn_right(Direction.turn_right(self.dir))
+    self:set_action(nil)
+  end
+end
 
 actions["INSPECT"] = function (self)
   return function (self, map, dt)
-    local item = map:get_item_at(self.x, self.y)
-    if item == "GOAL" then
-      love.window.showMessageBox("HURRAY", "Items: \n"..(table.concat(self.inventory, ",\n")))
-    elseif item then
+    local dx, dy = Direction.delta(self.dir)
+    local item = map:get_item_at(self.x + dx, self.y + dy)
+    if item then
       table.insert(self.inventory, item)
-      map:set_item_at(self.x, self.y, nil)
+      map:set_item_at(self.x + dx, self.y + dy, nil)
+    end
+    self:set_action(nil)
+  end
+end
+
+actions["GOAL"] = function (self)
+  return function (self, map, dt)
+    local tile = map:get_tile_at(self.x, self.y)
+    if tile == "GOAL" then
+      self.program = nil
+      self.won     = true
     end
     self:set_action(nil)
   end
@@ -230,7 +246,6 @@ actions["SET"] = function (self, id, val)
 end
 
 actions["wait"] = function (self, time)
-  print("wait", time)
   return function (self, map, dt)
     self.anim = self.anim + dt*self.move_speed
     time = time - dt

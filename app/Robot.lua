@@ -16,6 +16,12 @@ function Robot:set_action(command, ...)
   self.action = command and action_for[command](self, ...)
 end
 
+function Robot:has_won()
+  local won = self.won
+  self.won = nil
+  return won
+end
+
 function Robot:update(map, dt)
   local action = self.action
   if action then

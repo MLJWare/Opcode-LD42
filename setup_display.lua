@@ -32,8 +32,12 @@ love.window.setMode(board_w*Global.SCALE, board_h*Global.SCALE, {
 })
 
 
-function love.resize(w, h)
-  local scale_w = math.floor(w/board_w)
-  local scale_h = math.floor(h/board_h)
-  Global.SCALE = math.min(scale_w, scale_h)
+function love.resize(screen_w, screen_h)
+  local scale_w = math.floor(screen_w/board_w)
+  local scale_h = math.floor(screen_h/board_h)
+  local scale   = math.min(scale_w, scale_h)
+
+  Global.SCALE  = scale
+  Global.OFFSET_X = math.floor((screen_w - board_w*scale)/2)
+  Global.OFFSET_Y = math.floor((screen_h - board_h*scale)/2)
 end

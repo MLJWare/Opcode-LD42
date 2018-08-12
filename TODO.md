@@ -4,26 +4,27 @@
 
 * ~~resetting the level~~
 * ~~clearing  the level~~
-* QUESTION movement of placed Opcodes
-* QUESTION deletion of placed Opcodes (moving them into the palette?)
+* ~~movement of placed Opcodes~~
+* ~~deletion of placed Opcodes (moving them into the palette?)~~
 
-* TODO better handling of win-condition
-    * gain stars based on performance?
-    * unlocking of new levels
+* ~~better handling of win-condition~~
+    * TODO Greetings pop-up.
+    * TODO gain stars based on performance?
+    * TODO unlocking of new levels
 
 * TODO better reason to collect floppy disks...
 
 * TODO actually _design_ the levels
 
-* TODO better **name for the game**
+* ~~better **name for the game**~~
 
-* TODO better title scene
-* TODO better level select scene
+* ~~better title scene~~
+* ~~better level select scene~~
 
 * TODO instructions/tutorial
 
 * IDEA additional obstacles
-    * buttons, doors, (bombs), ...
+    * buttons, doors, (bombs), teleport pad, ...
 
 * TODO sound effects
 * NOTE (basic background music) --> https://boscaceoil.net

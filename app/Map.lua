@@ -84,10 +84,10 @@ do
 
   local tile_of = {
     [rgb(127, 127, 127)] = "WALL";
+    [rgb(0, 255, 0)    ] = "GOAL";
   }
   local item_of = {
     [rgb(0, 255, 255)] = "FLOPPY";
-    [rgb(0, 255, 0)  ] = "GOAL";
   }
 
   function Map.load_png(level)
@@ -145,7 +145,7 @@ function Map.load_lua (level)
       start_y = {4};
       tiles_x = 4;
       tiles_y = 4;
-      items = {"GOAL"}
+      tiles = {"GOAL"}
     }
   end
   return Map(result)
