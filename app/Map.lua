@@ -6,6 +6,7 @@ Map.__index = Map
 
 setmetatable(Map, {
   __call = function (_, map)
+    assert(type(map.id)=="number", "Missing numeric 'id' property")
     assert(type(map.start_x)=="table", "Missing 'start_x' property")
     assert(type(map.start_y)=="table", "Missing 'start_y' property")
     assert(#map.start_x == #map.start_y, "Problem with start positions, unpaired coords.")
@@ -102,6 +103,7 @@ do
     local item_count = {}
 
     local result = {
+      id         = level;
       tiles_x    = tiles_x;
       tiles_y    = tiles_y;
       start_x    = start_x;
@@ -136,22 +138,6 @@ do
     end
     return Map(result)
   end
-end
-
-function Map.load_lua (level)
-  local fn = loadfile ( ("app/level/%s.lua"):format(level) )
-  local status, result = pcall(fn)
-  if not status then
-    print("Error loading level", result)
-    result = {
-      start_x = {4};
-      start_y = {4};
-      tiles_x = 4;
-      tiles_y = 4;
-      tiles = {"GOAL"}
-    }
-  end
-  return Map(result)
 end
 
 return Map

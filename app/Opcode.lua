@@ -37,7 +37,6 @@ function Opcode:try_locate_input(local_mx, local_my)
   for _, input in ipairs(self.inputs) do
     local dx = local_mx - input.dx
     local dy = local_my - input.dy
-    print(dx, dy)
     if -3 < dx and dx < 5 and -3 < dy and dy < 7 then
       return input
     end

@@ -1,17 +1,22 @@
 local HALF_PI = math.pi/2
 
-local LEFT  = 0
-local DOWN  = 1
-local RIGHT = 2
-local UP    = 3
+local DIR = {
+  LEFT  = 0;
+  DOWN  = 1;
+  RIGHT = 2;
+  UP    = 3;
+}
 
 local Direction = {
-  "DOWN" , DOWN  = DOWN;
-  "RIGHT", RIGHT = RIGHT;
-  "UP"   , UP    = UP;
-  "LEFT" , LEFT  = LEFT;
+  [DIR.LEFT ] = "LEFT" , LEFT  = DIR.LEFT;
+  [DIR.DOWN ] = "DOWN" , DOWN  = DIR.DOWN;
+  [DIR.RIGHT] = "RIGHT", RIGHT = DIR.RIGHT;
+  [DIR.UP   ] = "UP"   , UP    = DIR.UP;
   angle = function (dir)
     return (3-dir)*HALF_PI
+  end;
+  from = function (str)
+    return DIR[str] or DIR.LEFT
   end;
   turn_left = function (dir)
     return (dir+1)%4
@@ -20,10 +25,10 @@ local Direction = {
     return (dir-1)%4
   end;
   delta = function (dir)
-    if dir == DOWN  then return  0,  1 end
-    if dir == RIGHT then return  1,  0 end
-    if dir == UP    then return  0, -1 end
-    if dir == LEFT  then return -1,  0 end
+    if dir == DIR.DOWN  then return  0,  1 end
+    if dir == DIR.RIGHT then return  1,  0 end
+    if dir == DIR.UP    then return  0, -1 end
+    if dir == DIR.LEFT  then return -1,  0 end
     return 0, 0
   end;
 }

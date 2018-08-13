@@ -1,6 +1,7 @@
 local rgb                     = require "app.util.color.rgb"
 local try_delegate            = require "app.util.try.delegate"
 local Global                  = require "app.Global"
+local SaveData                = require "app.SaveData"
 local main = {}
 
 local background = love.graphics.newImage("res/background.png")
@@ -30,6 +31,22 @@ function setPopup(popup, ...)
   end
 end
 
+function instructions(messages)
+  local index = 0
+  local function next_text()
+    index = index + 1
+    local text = messages[index]
+    if text then
+      setPopup("info", text, next_text)
+    else
+      setPopup(nil)
+    end
+  end
+  next_text()
+end
+
+
+
 setScene("title")
 
 function main.delegate(event, a, b, c, d, e, f, g)
@@ -38,6 +55,16 @@ function main.delegate(event, a, b, c, d, e, f, g)
   else
     try_delegate(current_scene, event, a, b, c, d, e, f, g)
   end
+end
+
+function unlockLevel(level_id)
+  SaveData.set_bool(level_id.."-UNLOCKED", true)
+  SaveData.lua2disk()
+end
+
+function unlockOpcode(opcode_id)
+  SaveData.set_bool(opcode_id.."-UNLOCKED", true)
+  SaveData.lua2disk()
 end
 
 function main.update(dt)

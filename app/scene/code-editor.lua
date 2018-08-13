@@ -1,15 +1,17 @@
 local Board                   = require "app.Board"
 local Button                  = require "app.Button"
-local Robot                   = require "app.Robot"
-local Opcode                  = require "app.Opcode"
-local Map                     = require "app.Map"
 local Direction               = require "app.Direction"
-local Images                  = require "app.Images"
 local Global                  = require "app.Global"
+local Images                  = require "app.Images"
+local Map                     = require "app.Map"
+local Opcode                  = require "app.Opcode"
+local Robot                   = require "app.Robot"
+local SaveData                = require "app.SaveData"
 
 local contains_mouse          = require "app.util.contains_mouse"
 local rgb                     = require "app.util.color.rgb"
 local rgba                    = require "app.util.color.rgba"
+local sandbox                 = require "app.util.sandbox"
 local vec3                    = require "app.util.color.vec3"
 local vec4                    = require "app.util.color.vec4"
 
@@ -33,6 +35,8 @@ local function r2t(x) return math.floor(x/(TILE_SIZE*Global.SCALE)) end
 local code_editor = {}
 
 local map, robot
+local robot_dir
+local board_setup
 
 local _opcode_moving = nil
 local _opcode_moving_dx = 0
@@ -87,11 +91,13 @@ end
 
 local function draw_OPCODE (self, x, y)
   local scale = Global.SCALE
-
   if not (x and y) then
     x = l2r(self.x) + CODE_PALETTE_X*scale
     y = l2r(self.y) + CODE_PALETTE_Y*scale
   end
+
+  local v = self:unlocked() and (code_editor.codeable and 1 or .5) or .25
+  love.graphics.setColor(v,v,v,v)
   draw_image_direct("code-editor/opcode/"..self.id, x, y, 0, 0, 0, scale)
 end
 
@@ -102,6 +108,10 @@ local function make_OPCODE (self)
     tiles_y = self.tiles_y;
     board   = board;
   }
+end
+
+local function OPCODE_unlocked (self)
+  return SaveData.get_bool(self.id.."-UNLOCKED")
 end
 
 local function OpcodeTemplate(opcode)
@@ -117,15 +127,16 @@ local function OpcodeTemplate(opcode)
   opcode.draw     = draw_OPCODE
   opcode.contains = contains_mouse
   opcode.make     = make_OPCODE
+  opcode.unlocked = OPCODE_unlocked
   return opcode
 end
 
-local yoff = 0
+local yoff = 2
 local opcode_templates = {
-  OpcodeTemplate { id = "UP"         ; x = 0; y = 0-yoff; };
-  OpcodeTemplate { id = "RIGHT"      ; x = 2; y = 0-yoff; };
-  OpcodeTemplate { id = "DOWN"       ; x = 0; y = 1-yoff; };
-  OpcodeTemplate { id = "LEFT"       ; x = 2; y = 1-yoff; };
+  --OpcodeTemplate { id = "UP"         ; x = 0; y = 0-yoff; };
+  --OpcodeTemplate { id = "RIGHT"      ; x = 2; y = 0-yoff; };
+  --OpcodeTemplate { id = "DOWN"       ; x = 0; y = 1-yoff; };
+  --OpcodeTemplate { id = "LEFT"       ; x = 2; y = 1-yoff; };
   OpcodeTemplate { id = "MOVE_1"     ; x = 0; y = 2-yoff; };
   OpcodeTemplate { id = "TURN_LEFT"  ; x = 1; y = 2-yoff; };
   OpcodeTemplate { id = "TURN_AROUND"; x = 2; y = 2-yoff; };
@@ -141,17 +152,33 @@ local opcode_templates = {
   OpcodeTemplate { id = "SET"        ; x = 2; y = 6-yoff; };
   OpcodeTemplate { id = "JUMP"       ; x = 0; y = 7-yoff; };
 }
+for _, template in ipairs(opcode_templates) do
+  opcode_templates[template.id] = template
+end
 
-function code_editor.on_enter(level)
-  GLOB_level = level
+function code_editor.on_enter(level_id)
+  code_editor.level_id = level_id
+  local setup = sandbox("app/level/"..level_id..".lua", {
+    unlockOpcode = unlockOpcode;
+    instructions = instructions;
+    isAndroid    = love.system.getOS() == "Android";
+    unpack       = unpack;
+  })
+  robot_dir = type(setup) == "string" and Direction.from(setup) or nil
+  board_setup = type(setup) == "table" and setup or nil
+  if type(board_setup) == "table" then
+    robot_dir = board_setup.dir and Direction.from(board_setup.dir) or nil
+  end
   code_editor.clear()
 end
 
 function code_editor.reset()
-  map = Map.load_png(GLOB_level)
+  map = Map.load_png(code_editor.level_id)
+
   robot = Robot {
     x = map.start_x[1];
     y = map.start_y[1];
+    dir = robot_dir
   }
   code_editor.codeable = true
 end
@@ -175,15 +202,22 @@ function code_editor.clear()
     tiles_x = map.tiles_x;
     tiles_y = map.tiles_y;
   }
+  if board_setup then
+    robot_dir = board_setup.dir and Direction.from(board_setup.dir)
+    for _, v in ipairs(board_setup) do
+      local id, x, y = unpack(v)
+      board:place(opcode_templates[id], x, y)
+    end
+  end
+  robot.dir = robot_dir or robot.dir
 end
-
-if GLOB_level then code_editor.on_enter(GLOB_level) end -- DEBUG HACK TODO remove
 
 function code_editor.update(dt)
   robot:update(map, dt)
 
   if robot:has_won() then
     setPopup("won", self, robot, map)
+    code_editor.reset()
   end
 end
 
@@ -197,7 +231,7 @@ function code_editor.mousepressed(mx, my, button, isTouch)
   if mx >= code_palette_x and my >= code_palette_y then
     if button == MB_LEFT then
       for _, btn in ipairs(buttons) do
-        btn.held = btn:contains(mx, my)
+        btn:mousepressed(mx, my, button, isTouch)
       end
     end
 
@@ -206,15 +240,17 @@ function code_editor.mousepressed(mx, my, button, isTouch)
       local my2 = my - code_palette_y
 
       for _, template in ipairs(opcode_templates) do
-        local dx = mx2 - l2r(template.x)
-        local dy = my2 - l2r(template.y)
-        if template:contains(dx, dy) then
-          _opcode_moving = template
-          _opcode_moving_prev_x = nil
-          _opcode_moving_prev_y = nil
-          _opcode_moving_dx = dx
-          _opcode_moving_dy = dy
-          return
+        if template:unlocked() then
+          local dx = mx2 - l2r(template.x)
+          local dy = my2 - l2r(template.y)
+          if template:contains(dx, dy) then
+            _opcode_moving = template
+            _opcode_moving_prev_x = nil
+            _opcode_moving_prev_y = nil
+            _opcode_moving_dx = dx
+            _opcode_moving_dy = dy
+            return
+          end
         end
       end
     end
@@ -263,10 +299,10 @@ function code_editor.mousereleased(mx, my, button, isTouch)
 end
 
 function code_editor.keypressed(key, scancode, isrepeat)
-  if key == "escape" then
+  if key == "escape" and not isrepeat then
     setScene("level-select")
     return
-  elseif robot:is_idle() and key == "return" then
+  elseif robot:is_idle() and key == "return" and not isrepeat then
     code_editor.compile_and_run()
   elseif code_editor.codeable then
     board:keypressed(key, scancode, isrepeat)
@@ -282,8 +318,9 @@ function code_editor.draw()
 
   love.graphics.translate(scale*CODE_FIELD_X, scale*CODE_FIELD_Y)
   code_editor.draw_tiles()
-  code_editor.draw_start_tiles()
+  --code_editor.draw_start_tiles()
   code_editor.draw_robot()
+  code_editor.draw_tint_shade()
   love.graphics.pop()
 
   code_editor.draw_opcode_templates()
@@ -292,12 +329,6 @@ function code_editor.draw()
 end
 
 function code_editor.draw_opcode_templates()
-  if code_editor.codeable then
-    love.graphics.setColor(1,1,1)
-  else
-    love.graphics.setColor(.5,.5,.5,.5)
-  end
-
   for _, template in ipairs(opcode_templates) do
     if template ~= _opcode_moving then
       template:draw()
@@ -318,6 +349,7 @@ function code_editor.try_draw_opcode_moving()
   local mx, my = love.mouse.getPosition()
   local x = mx - _opcode_moving_dx
   local y = my - _opcode_moving_dy
+  love.graphics.setColor(vec4(1.0, 1.0, 1.0, 0.5))
   _opcode_moving:draw(x, y)
 end
 
@@ -347,8 +379,26 @@ function code_editor.draw_tiles()
 
       local opcode = board:opcode_at(x, y)
       if opcode then
-        love.graphics.setColor(1, 1, 1, idle and 1 or 0.25)
+        love.graphics.setColor(1, 1, 1, idle and (code_editor.codeable and 1 or 0.5) or 0.25)
         opcode:draw(l2r(x-1), l2r(y-1))
+      end
+    end
+  end
+end
+
+function code_editor.draw_tint_shade()
+  if not robot:is_idle() then return end
+
+  love.graphics.setColor(vec4(0.0, 0.0, 0.0, 0.5))
+  local scale = Global.SCALE
+  local render_tile_size = TILE_SIZE*scale
+  for y = 1, map.tiles_y do
+    for x = 1, map.tiles_x do
+      local shade = map:is_start(x, y)
+                 or map:get_tile_at(x,y)
+                 or map:get_item_at(x,y)
+      if shade then
+        love.graphics.rectangle("fill", l2r(x-1), l2r(y-1), render_tile_size, render_tile_size)
       end
     end
   end
@@ -362,6 +412,7 @@ function code_editor.try_draw_tile(x, y)
   elseif tile == "GOAL" then
     draw_image_tiled("game/goal", x, y)
   end
+  return true
 end
 
 function code_editor.try_draw_item(x, y)
@@ -371,12 +422,15 @@ function code_editor.try_draw_item(x, y)
     love.graphics.setColor(1,1,1)
     draw_image_tiled("game/floppy", x, y)
   end
+  return true
 end
 
 function code_editor.draw_robot()
   local anim = 1 + math.floor(robot.anim*TILE_SIZE)%4
+
+  local x, y = robot.x, robot.y
   love.graphics.setColor(1,1,1)
-  draw_image_tiled("game/robot/"..anim, robot.x, robot.y, Direction.angle(robot.dir))
+  draw_image_tiled("game/robot/"..anim, x, y, Direction.angle(robot.dir))
 end
 
 function code_editor.draw_opcode_placement_indicator()

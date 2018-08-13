@@ -1,32 +1,47 @@
-local rgb                     = require "app.util.color.rgb"
-local rgba                    = require "app.util.color.rgba"
 local vec3                    = require "app.util.color.vec3"
-local vec4                    = require "app.util.color.vec4"
 local Global                  = require "app.Global"
 local contains_mouse          = require "app.util.contains_mouse"
+local SaveData                = require "app.SaveData"
+
+local function is_unlocked(level_id)
+  return SaveData.get_bool(level_id.."-UNLOCKED")
+end
 
 local level_select_scene = {}
 
+local function is_gold(level_id)
+  local floppy_count     = SaveData.get_number(level_id.."-FLOPPY")
+  local max_floppy_count = SaveData.get_number(level_id.."-FLOPPY-MAX")
+  return floppy_count >= max_floppy_count
+end
 
 local SLOT_SIZE
 
 local draw_level_tile
 do
-  local img = love.graphics.newImage("res/level-select/tiles.png")
-  img:setFilter("nearest", "nearest")
-  SLOT_SIZE = math.floor(img:getWidth()/4)
-  local quads = {}
+  local img      = love.graphics.newImage("res/level-select/tiles.png")
+  local img_done = love.graphics.newImage("res/level-select/tiles-done.png")
+  local img_gold = love.graphics.newImage("res/level-select/tiles-gold.png")
+  local img_w, img_h = img:getDimensions()
+  SLOT_SIZE = math.floor(img_w/4)
+  local quads      = {}
   for y = 1, 4 do
     local qy = (y-1)*SLOT_SIZE
     for x = 1, 4 do
       local qx = (x-1)*SLOT_SIZE
-      quads[x + (y-1)*4] = love.graphics.newQuad(qx, qy, SLOT_SIZE, SLOT_SIZE, img:getDimensions())
+      local id = x + (y-1)*4
+      quads[id] = love.graphics.newQuad(qx, qy, SLOT_SIZE, SLOT_SIZE, img_w, img_h)
     end
   end
   function draw_level_tile(level_id, x, y, r)
-    local quad = quads[1 + level_id]
+    local done  = is_unlocked(level_id + 1)
+    local gold  = done and is_gold(level_id)
+    local quad  = quads[1 + level_id]
     if not quad then return end
-    love.graphics.draw(img, quad, x, y)
+    local image = gold and img_gold
+               or done and img_done
+               or img
+    love.graphics.draw(image, quad, x, y)
   end
 end
 
@@ -52,17 +67,18 @@ for y = 1, slots_y do
   for x = 1, slots_x do
     local rx = (x-1)*(SLOT_SIZE + 16) + 14
     local level_id = (x-1) + (y-1)*slots_x
+    if level_id > 9 then goto done end
+
     levels[1 + level_id] = {
       x = rx;
       y = ry;
       width  = SLOT_SIZE;
       height = SLOT_SIZE;
-      open = isFile(("app/level/%s.png"):format(level_id));
       id = level_id;
       contains = contains_mouse;
 
       draw = function (self)
-        if not self.open then
+        if not is_unlocked(self.id) then
           love.graphics.setColor(vec3(0.27, 0.23, 0.21))
         elseif self:contains(love.mouse.getPosition()) then
           if love.mouse.isDown(1,2,3) then
@@ -79,8 +95,10 @@ for y = 1, slots_y do
     }
   end
 end
+::done::
 
 function level_select_scene.on_enter()
+  unlockLevel(0)
 end
 
 function level_select_scene.on_exit()

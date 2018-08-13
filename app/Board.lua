@@ -124,9 +124,17 @@ end
 function Board:keypressed(key, scancode, isrepeat)
   local input = self.active_input
   if not input then return end
-  local value = tonumber(key, 18)
-  if not value or value < input.min or value > input.max then return end
-  input.value = value
+  local value
+  if key == "up" then
+    value = input.value + 1
+  elseif key == "down" then
+    value = input.value - 1
+  elseif not isrepeat then
+    local value = tonumber(key, 18)
+    if not value or value < input.min or value > input.max then return end
+    input.value = value
+  end
+  input:ensure_range()
 end
 
 return setmetatable(Board, {

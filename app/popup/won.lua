@@ -5,6 +5,7 @@ local vec4                    = require "app.util.color.vec4"
 local Global                  = require "app.Global"
 local Button                  = require "app.Button"
 local Images                  = require "app.Images"
+local SaveData                = require "app.SaveData"
 local popup_digits            = require "app.popup_digits"
 
 local MB_LEFT   = 1
@@ -22,8 +23,8 @@ do
   local center_x = Global.CENTER_X
   local center_y = Global.CENTER_Y
 
-  OFFSET_X = center_x - origin_x
-  OFFSET_Y = center_y - origin_y
+  OFFSET_X = center_x - origin_x - 28
+  OFFSET_Y = center_y - origin_y - 10
 end
 
 local LEFT_BUTTON_X  = 11 + OFFSET_X
@@ -54,6 +55,8 @@ local actual_floppy_count, max_floppy_count
 function won_popup.on_enter(scene, robot, map)
   actual_floppy_count = table.count(robot.inventory, "FLOPPY")
   max_floppy_count    = map.item_count["FLOPPY"] or 0
+  SaveData.update_level_status(map, robot)
+  unlockLevel(map.id + 1)
 end
 
 function won_popup.on_exit()
@@ -63,7 +66,11 @@ function won_popup.update(dt)
 end
 
 function won_popup.keypressed(key, scancode, isrepeat)
+  if isrepeat then return end
   if key == "space" or key == "return" then
+    setPopup (nil)
+    setScene("level-select")
+  elseif key == "return" then
     setPopup (nil)
   end
 end
@@ -71,13 +78,14 @@ end
 function won_popup.mousepressed(mx, my, button, isTouch)
   if button == MB_LEFT then
     for _, btn in ipairs(buttons) do
-      btn.held = btn:contains(mx, my)
+      btn:mousepressed(mx, my, button, isTouch)
     end
   end
 end
 
 function won_popup.draw()
   local scale = Global.SCALE
+  love.graphics.setColor(1,1,1)
   love.graphics.draw(back_image, OFFSET_X*scale, OFFSET_Y*scale, 0, scale, scale)
   popup_digits(actual_floppy_count, 2, OFFSET_X+39, OFFSET_Y+39)
   popup_digits(max_floppy_count   , 2, OFFSET_X+63, OFFSET_Y+39)

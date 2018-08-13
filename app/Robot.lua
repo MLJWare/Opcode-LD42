@@ -45,7 +45,7 @@ return setmetatable(Robot, {
     assert(type(robot.x)=="number")
     assert(type(robot.y)=="number")
     setmetatable(robot, Robot)
-    robot.dir = Direction.UP;
+    robot.dir  = robot.dir or Direction.RIGHT;
     robot.anim = 0;
     robot.move_speed = 2
     robot.vars = { A = 0; B = 0; C = 0; D = 0; E = 0; F = 0; G = 0; H = 0; }

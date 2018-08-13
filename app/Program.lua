@@ -1,6 +1,6 @@
 local function next_row(row)
   local i = ("ABCDEFGH"):find(row) + 1
-  return ("ABCDEFGH"):sub(i, i), 1
+  return ("ABCDEFGH"):sub(i, i), 0
 end
 
 return function (program)

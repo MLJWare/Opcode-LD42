@@ -31,15 +31,14 @@ function title_scene.update(dt)
 end
 
 function title_scene.keypressed(key, scancode, isrepeat)
+  if isrepeat then return end
   if key == "space" or key == "return" then
     setScene ("level-select")
   end
 end
 
 function title_scene.mousepressed(mx, my, button, isTouch)
-  if button == MB_LEFT then
-    start_button.held = start_button:contains(mx, my)
-  end
+  start_button:mousepressed(mx, my, button, isTouch)
 end
 
 function title_scene.draw()

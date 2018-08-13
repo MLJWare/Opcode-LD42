@@ -2,6 +2,9 @@ local Global                  = require "app.Global"
 local Images                  = require "app.Images"
 local contains_mouse          = require "app.util.contains_mouse"
 
+local MB_LEFT   = 1
+local MB_RIGHT  = 2
+local MB_MIDDLE = 3
 
 local Button = {}
 Button.__index = Button
@@ -23,6 +26,11 @@ function Button:draw()
     self.held = nil
     if over then self:on_click() end
   end
+end
+
+function Button:mousepressed(mx, my, button, isTouch)
+  if button ~= MB_LEFT then return end
+  self.held = self:contains(mx, my)
 end
 
 Button.contains = contains_mouse
