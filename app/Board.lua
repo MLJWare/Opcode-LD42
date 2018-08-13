@@ -124,9 +124,8 @@ end
 function Board:keypressed(key, scancode, isrepeat)
   local input = self.active_input
   if not input then return end
-
-  local value = math.random(15)
-  if value > 9 then value = ("ABCDEF"):sub(value-9, value-9) end
+  local value = tonumber(key, 18)
+  if not value or value < input.min or value > input.max then return end
   input.value = value
 end
 

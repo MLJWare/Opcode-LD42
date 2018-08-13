@@ -18,33 +18,52 @@ function setScene(scene, ...)
   end
 end
 
+local current_popup
+
+function setPopup(popup, ...)
+  if current_popup then
+    try_delegate(current_popup, "on_exit")
+  end
+  current_popup = popup and (require ("app.popup."..popup))
+  if current_popup then
+    try_delegate(current_popup, "on_enter", ...)
+  end
+end
+
 setScene("title")
 
+function main.delegate(event, a, b, c, d, e, f, g)
+  if current_popup then
+    try_delegate(current_popup, event, a, b, c, d, e, f, g)
+  else
+    try_delegate(current_scene, event, a, b, c, d, e, f, g)
+  end
+end
+
 function main.update(dt)
-  try_delegate(current_scene, "update", dt)
+  main.delegate("update", dt)
 end
 
 function love.keypressed(key, scancode, isrepeat)
-  try_delegate(current_scene, "keypressed", key, scancode, isrepeat)
+    main.delegate("keypressed", key, scancode, isrepeat)
 end
 
 function love.mousereleased(mx, my, button, isTouch)
   mx = mx - Global.OFFSET_X
   my = my - Global.OFFSET_Y
-  try_delegate(current_scene, "mousereleased", mx, my, button, isTouch)
+  main.delegate("mousereleased", mx, my, button, isTouch)
 end
 
 function love.mousepressed(mx, my, button, isTouch)
   mx = mx - Global.OFFSET_X
   my = my - Global.OFFSET_Y
-  try_delegate(current_scene, "mousepressed", mx, my, button, isTouch)
+  main.delegate("mousepressed", mx, my, button, isTouch)
 end
 
 do
   local _getMousePosition = love.mouse.getPosition
 
   function love.mouse.getPosition()
-    print("here")
     local mx, my = _getMousePosition()
     mx = mx - Global.OFFSET_X
     my = my - Global.OFFSET_Y
@@ -55,7 +74,7 @@ end
 function love.mousemoved(mx, my, dx, dy)
   mx = mx - Global.OFFSET_X
   my = my - Global.OFFSET_Y
-  try_delegate(current_scene, "mousemoved", mx, my, dx, dy)
+  main.delegate("mousemoved", mx, my, dx, dy)
 end
 
 function main.draw()
@@ -65,6 +84,7 @@ function main.draw()
   love.graphics.setColor(1,1,1)
   love.graphics.draw(background, -126*scale, -76*scale, 0, scale, scale)
   try_delegate(current_scene, "draw")
+  try_delegate(current_popup, "draw")
   love.graphics.pop()
 end
 

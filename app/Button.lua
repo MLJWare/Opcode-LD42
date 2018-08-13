@@ -8,6 +8,7 @@ Button.__index = Button
 
 function Button:draw()
   local scale = Global.SCALE
+  local scale2 = scale*self.upscale
   local x = self.x * scale
   local y = self.y * scale
 
@@ -16,11 +17,11 @@ function Button:draw()
   local over = self:contains(love.mouse.getPosition())
   local image = (held and over) and self.image_down or self.image
   love.graphics.setColor(1,1,1)
-  love.graphics.draw(image, x, y, 0, scale, scale)
+  love.graphics.draw(image, x, y, 0, scale2, scale2)
 
-  if held and over and not down then
+  if held and not down then
     self.held = nil
-    self:on_click()
+    if over then self:on_click() end
   end
 end
 
@@ -33,6 +34,8 @@ return setmetatable(Button, {
     assert(type(button.on_click)=="function", "Missing 'on_click' callback.")
     local id = button.id assert(type(id)=="string", "Missing 'id' text property.")
     setmetatable(button, Button)
+
+    button.upscale = tonumber(button.upscale) or 1
 
     local image      = Images.get("code-editor/button/"..id)
     local image_down = Images.get("code-editor/button/"..id.."_down")

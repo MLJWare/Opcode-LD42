@@ -95,18 +95,20 @@ do
 
     local tiles_x, tiles_y = data:getDimensions()
 
-    local start_x = {}
-    local start_y = {}
-    local items   = {}
-    local tiles   = {}
+    local start_x    = {}
+    local start_y    = {}
+    local items      = {}
+    local tiles      = {}
+    local item_count = {}
 
     local result = {
-      tiles_x = tiles_x;
-      tiles_y = tiles_y;
-      start_x = start_x;
-      start_y = start_y;
-      items   = items;
-      tiles   = tiles;
+      tiles_x    = tiles_x;
+      tiles_y    = tiles_y;
+      start_x    = start_x;
+      start_y    = start_y;
+      items      = items;
+      item_count = item_count;
+      tiles      = tiles;
     }
 
     for y = 1, tiles_y do
@@ -127,6 +129,7 @@ do
 
         local item = item_of[color]
         if item then
+          item_count[item] = (item_count[item] or 0) + 1
           Map.set_item_at(result, x, y, item)
         end
       end

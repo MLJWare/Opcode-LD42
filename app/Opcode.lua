@@ -3,6 +3,10 @@ local Program                 = require "app.Program"
 local Images                  = require "app.Images"
 local Global                  = require "app.Global"
 
+local MB_LEFT   = 1
+local MB_RIGHT  = 2
+local MB_MIDDLE = 3
+
 local DISPLAY_MAX = 0x11
 
 local display
@@ -51,8 +55,7 @@ end
 function Opcode:on_click(local_mx, local_my, button, isTouch)
   local input = self:try_locate_input(local_mx, local_my)
   if input and input == self.board.active_input then
-    print(button)
-    if button == 2 then input:decrement() else input:increment() end
+    if button == MB_RIGHT then input:decrement() else input:increment() end
   end
   self.board.active_input = input
 

@@ -3,14 +3,13 @@ local function next_row(row)
   return ("ABCDEFGH"):sub(i, i), 1
 end
 
-
 return function (program)
   return coroutine.wrap(function ()
     local row = "A"
-    local pos = 1
+    local pos = 0
     while true do
       local code   = program[row] if not code   then break end
-      local opcode = code[pos]
+      local opcode = code[pos + 1]
 
       if not opcode then
         row, pos = next_row(row)

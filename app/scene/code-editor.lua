@@ -183,7 +183,7 @@ function code_editor.update(dt)
   robot:update(map, dt)
 
   if robot:has_won() then
-    love.window.showMessageBox("HURRAY", "Items: \n"..(table.concat(robot.inventory, ",\n")))
+    setPopup("won", self, robot, map)
   end
 end
 
@@ -356,12 +356,10 @@ end
 
 function code_editor.try_draw_tile(x, y)
   local tile = map:get_tile_at(x, y) if not tile then return end
+  love.graphics.setColor(1,1,1)
   if tile == "WALL" then
-    local render_tile_size = TILE_SIZE*Global.SCALE
-    love.graphics.setColor(vec3(0.31, 0.31, 0.31))
-    love.graphics.rectangle("fill", l2r(x-1), l2r(y-1), render_tile_size, render_tile_size)
+    draw_image_tiled("game/wall", x, y)
   elseif tile == "GOAL" then
-    love.graphics.setColor(1,1,1)
     draw_image_tiled("game/goal", x, y)
   end
 end

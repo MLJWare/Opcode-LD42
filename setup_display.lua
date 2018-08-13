@@ -11,6 +11,9 @@ local board_image = Images.get("code-editor/Board")
 
 local board_w, board_h = board_image:getDimensions()
 
+Global.CENTER_X = math.floor(board_w/2)
+Global.CENTER_Y = math.floor(board_h/2)
+
 Global.SCALE = 4
 
 love.window.setMode(board_w*Global.SCALE, board_h*Global.SCALE, {

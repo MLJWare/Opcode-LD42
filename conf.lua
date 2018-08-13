@@ -4,7 +4,7 @@ function love.conf(t)
 
   t.window.display = 2
 
-  t.window.width  = 1
+  t.window.width  = 2
   t.window.height = 1
   t.window.x      = -1000
   t.window.y      = -1000

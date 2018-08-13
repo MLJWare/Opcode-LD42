@@ -2,6 +2,8 @@ love.graphics.setDefaultFilter("nearest", "nearest")
 function math.round(x) return math.floor(x + 0.5) end
 function math.trunc(x) return (x > 0) and math.floor(x) or math.ceil(x) end
 
+function table.count(t, v) local c=0 for i=1,#t do c=c+(t[i]==v and 1 or 0) end return c end
+
 local swapper = require "swapper"
 swapper.install()
 
