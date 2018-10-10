@@ -1,23 +1,23 @@
 instructions {
 [[
 Ok, perhaps that was a
-little to easy...
+little too easy...
 ]];
 [[
 I know!
 I'll just remove parts
 of the program, and you
-fill it in.]];
+fill in the missing blocks.]];
 [[
 Let's give it a shot.
 First, try running the
-code, them try fixing
+code, then try fixing
 it.]];
 [[
 Btw, the yellow button
 next to "Run", resets.
 Press it after running
-the code befrore making
+the code before making
 changes. Have fun!
 ]]
 }
