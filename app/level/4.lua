@@ -3,7 +3,7 @@ instructions {
 [[
 Told you it was cool!
 See if you're able to
-gets all the floppy
+get all the floppy
 disks in each level.]];
 [[
 Anyways, here's another
